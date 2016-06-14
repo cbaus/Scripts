@@ -1,0 +1,55 @@
+#!/usr/bin/env python2
+from __future__ import print_function
+import sys
+from subprocess import Popen, PIPE
+import argparse
+import re
+
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+    
+if __name__ == "__main__": 
+    name = None
+    find = None
+
+    parser = argparse.ArgumentParser(description='Find files. Example:\n findfiles .cc \"class X\" \n This will search for class X in all cc files.')
+    parser.add_argument('filename', type = str, nargs='?', default = None, help = 'pattern in file name')
+    parser.add_argument('content', type = str, nargs='?', default = None, help = 'pattern in file content')
+
+    args = parser.parse_args()
+    
+    command = "find .  -type f"
+    if args.filename != None:
+        command += "  -name \"*{n}*\"".format(n=args.filename)
+
+    proc1 = Popen(command, shell=True, stdout=PIPE)
+    out,err=proc1.communicate()
+
+    if out != None:
+        if args.content != None:
+            for iOut in out.splitlines(False):
+                with open(iOut, "r") as f:
+                    for line in f.readlines():
+                        if args.content in line:
+                            words =  re.split("("+args.content+")", line)
+                            for iWord in words:
+                                if args.content in iWord:
+                                    print(bcolors.HEADER + iWord + bcolors.ENDC, end="")
+                                else:
+                                    print(iWord, end="")
+        else: #no file content search set
+            for iOut in out.splitlines(False):
+                print(iOut)
+    
+
+    if err != None:
+        print("The following errors were returned:")
+        for i in err:
+            print(err)
